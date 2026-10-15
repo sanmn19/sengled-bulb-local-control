@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Official-app palette (extracted from Sengled Home APK resources + RN bundle) -->
+    <color name="sengled_red">#D52B1E</color>
+    <color name="sengled_header">#18181A</color>
+    <color name="sengled_bg">#1A1A1A</color>
+    <color name="sengled_surface">#262626</color>
+    <color name="sengled_surface_hi">#343434</color>
+    <color name="sengled_text">#F2F2F2</color>
+    <color name="sengled_text_dim">#7E7E7E</color>
+    <color name="sengled_blue">#007AFF</color>
+</resources>
