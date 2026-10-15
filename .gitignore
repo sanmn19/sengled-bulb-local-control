@@ -1,0 +1,14 @@
+# Private state (never commit)
+certs/
+bulbs.json
+rooms.json
+*.log
+__pycache__/
+
+# Android build output
+client/SengledLocal/app/build/
+client/SengledLocal/.gradle/
+client/SengledLocal/app/src/main/generated/
+client/SengledLocal/app/src/main/res/mipmap-*/
+local.properties
+*.apk
