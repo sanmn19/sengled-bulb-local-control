@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- glass bulb (dim) -->
+    <path
+        android:fillColor="#3A3D42"
+        android:strokeColor="#77797E"
+        android:strokeWidth="1.5"
+        android:pathData="M24,6 a14,14 0 0,1 14,14 c0,7 -5,10.5 -7,14 h-14 c-2,-3.5 -7,-7 -7,-14 a14,14 0 0,1 14,-14 z" />
+
+    <!-- filament -->
+    <path
+        android:strokeColor="#77797E"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M17,26 h4 l2,-4 l2,4 h4" />
+
+    <!-- screw base -->
+    <path
+        android:fillColor="#8A8D92"
+        android:pathData="M19,34 h10 v2 h-10 z M20,37 h8 v2 h-8 z M21,40 h6 v2 h-6 z" />
+</vector>

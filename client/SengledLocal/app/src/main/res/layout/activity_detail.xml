@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/sengled_bg">
+
+    <EditText
+        android:id="@+id/edName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Bulb name"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="10dp"
+        android:background="@null"
+        android:inputType="text"
+        android:maxLines="1"
+        android:imeOptions="actionDone"
+        android:textColor="@color/sengled_text"
+        android:textColorHint="@color/sengled_text_dim"
+        android:textCursorDrawable="@null"
+        android:textSize="20sp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="bottom"
+            android:padding="16dp">
+
+            <SeekBar
+                android:id="@+id/sbTemp"
+                android:layout_width="308dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:max="100"
+                android:minHeight="14dp"
+                android:maxHeight="14dp"
+                android:thumb="@drawable/seekbar_thumb"
+                android:thumbOffset="0dp"
+                android:progressDrawable="@drawable/seekbar_temp_track" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="308dp"
+                android:layout_marginTop="20dp">
+
+                <ImageView
+                    android:id="@+id/ivPower"
+                    android:layout_width="308dp"
+                    android:layout_height="308dp"
+                    android:layout_gravity="center_horizontal"
+                    android:contentDescription="@string/power"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:src="@drawable/ic_bulb_off" />
+
+                <FrameLayout
+                    android:layout_width="64dp"
+                    android:layout_height="308dp"
+                    android:layout_gravity="end"
+                    android:layout_marginEnd="4dp">
+
+                    <SeekBar
+                        android:id="@+id/sbBrightness"
+                        android:layout_width="308dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:rotation="270"
+                        android:max="100"
+                        android:minHeight="14dp"
+                        android:maxHeight="14dp"
+                        android:thumb="@drawable/seekbar_thumb"
+                        android:thumbOffset="0dp"
+                        android:progressDrawable="@drawable/seekbar_brightness_track" />
+                </FrameLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/colorButton"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/circle_button"
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <view
+                    class="com.sanmn19.sengledlocal.ColorPickerView"
+                    android:id="@+id/colorMini"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </FrameLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

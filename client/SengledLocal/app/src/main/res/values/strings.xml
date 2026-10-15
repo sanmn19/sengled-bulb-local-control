@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sengled Local</string>
+    <string name="pair_title">Pair new bulb</string>
+    <string name="settings_title">Settings</string>
+    <string name="refresh">Refresh</string>
+    <string name="add_bulb">Pair new bulb</string>
+    <string name="power">Power</string>
+    <string name="brightness">Brightness</string>
+    <string name="color">Color</string>
+    <string name="colortemp">Color temperature</string>
+    <string name="rooms">Rooms</string>
+    <string name="unassigned">Unassigned</string>
+    <string name="save">Save</string>
+    <string name="add_room">Add room</string>
+    <string name="rename">Rename</string>
+    <string name="move_to_room">Move to room</string>
+</resources>
