@@ -33,6 +33,8 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnRefresh).setOnClickListener(v -> deepRefresh());
         findViewById(R.id.btnSettings).setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));
+        findViewById(R.id.btnAutomations).setOnClickListener(v ->
+                startActivity(new Intent(this, AutomationsActivity.class)));
         findViewById(R.id.btnPair).setOnClickListener(v -> showAddChoices());
         feed = new EventFeed(() -> runOnUiThread(MainActivity.this::reload));
         feed.startFeed();

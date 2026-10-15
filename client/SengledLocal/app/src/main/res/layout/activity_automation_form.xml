@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/sengled_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/edLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Automation name (e.g. Sunset dim)"
+            android:textColor="@color/sengled_text"
+            android:textColorHint="@color/sengled_text_dim"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="When?"
+            android:textColor="@color/sengled_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgTrigger"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rbDaily"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:textColor="@color/sengled_text"
+                android:text="Every day at a clock time" />
+
+            <RadioButton
+                android:id="@+id/rbSunset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/sengled_text"
+                android:text="At sunset" />
+
+            <RadioButton
+                android:id="@+id/rbSunrise"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/sengled_text"
+                android:text="At sunrise" />
+
+            <RadioButton
+                android:id="@+id/rbInterval"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/sengled_text"
+                android:text="Every N minutes" />
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/edTriggerParam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="clock time: 22:00"
+            android:textColor="@color/sengled_text"
+            android:textColorHint="@color/sengled_text_dim"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Do what?"
+            android:textColor="@color/sengled_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgAction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rbPowerOn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:textColor="@color/sengled_text"
+                android:text="Turn ON" />
+
+            <RadioButton
+                android:id="@+id/rbPowerOff"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/sengled_text"
+                android:text="Turn OFF" />
+
+            <RadioButton
+                android:id="@+id/rbBrightness"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/sengled_text"
+                android:text="Brightness" />
+
+            <RadioButton
+                android:id="@+id/rbTemp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/sengled_text"
+                android:text="White temperature (warmth)" />
+
+            <RadioButton
+                android:id="@+id/rbColor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/sengled_text"
+                android:text="Color" />
+        </RadioGroup>
+
+        <RadioGroup
+            android:id="@+id/rgMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbSet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:textColor="@color/sengled_text"
+                android:text="set value" />
+
+            <RadioButton
+                android:id="@+id/rbOffset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:textColor="@color/sengled_text"
+                android:text="adjust (+/-)" />
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/edValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="value (e.g. 80, or RGB 255:100:0)"
+            android:textColor="@color/sengled_text"
+            android:textColorHint="@color/sengled_text_dim"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Which bulbs?"
+            android:textColor="@color/sengled_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/targetList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/btnSaveAuto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/btn_add_red"
+            android:textColor="#FFFFFF"
+            android:text="Create automation" />
+    </LinearLayout>
+</ScrollView>

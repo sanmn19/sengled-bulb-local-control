@@ -14,7 +14,7 @@ public class State {
     private static State instance;
 
     public static final String DEFAULT_LOCAL = ""      // your rig's LAN IP (set in Settings; used for pairing URLs);
-    public static final String DEFAULT_TAILSCALE = ""  // your rig's Tailscale IP (set in Settings; access across networks);
+    public static final String DEFAULT_TAILSCALE = ""  // your rig's Tailscale IP (set in Settings);
 
     public int port = 57542;
     private int activeCandidate = 0;

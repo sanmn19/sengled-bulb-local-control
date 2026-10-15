@@ -12,3 +12,5 @@ client/SengledLocal/app/src/main/generated/
 client/SengledLocal/app/src/main/res/mipmap-*/
 local.properties
 *.apk
+automations.json
+location.json
