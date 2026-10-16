@@ -21,6 +21,14 @@
             android:textColor="@color/sengled_text"
             android:textSize="20sp"
             android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnSetLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/sengled_text"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:text="Use my location" />
     </LinearLayout>
 
     <ScrollView

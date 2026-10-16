@@ -13,7 +13,11 @@ public class PowerSwitchStyle {
     private static final int GREY = 0xFF9E9E9E;
 
     public static void apply(Switch sw, boolean on) {
-        int accent = on ? GREEN : GREY;
+        apply(sw, on, GREEN);
+    }
+
+    public static void apply(Switch sw, boolean on, int onColor) {
+        int accent = on ? onColor : GREY;
 
         GradientDrawable track = new GradientDrawable();
         track.setCornerRadius(dp(sw, 15));

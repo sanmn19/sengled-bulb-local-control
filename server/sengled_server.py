@@ -29,7 +29,7 @@ from urllib.parse import unquote
 from automations import AutomationsStore, AutomationRunner, BadAutomation, resolve_offset
 
 STATE_VERSION = 1
-SERVER_VERSION = "sengled-local 1.9.0 (automations)"
+SERVER_VERSION = "sengled-local 1.11.0 (auto-named automations)"
 DEFAULT_HTTP_PORT = 57542
 DEFAULT_MQTT_PORT = 8883
 BULB_UDP_PORT = 9080
@@ -867,7 +867,58 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/automations":
-            self._json(self.server.autom.snapshot())
+            payload = self.server.autom.snapshot()
+            from automations import _local_now
+            now_local = _local_now(self.server.autom.location)
+            for e in payload["automations"]:
+                try:
+                    e["next_run_minutes"] = self.server.autom.next_run_minutes(e, now_local)
+                except Exception:
+                    e["next_run_minutes"] = None
+            self._json(payload)
+            return
+
+        if path.startswith("/api/sun"):
+            from automations import _local_now
+            from datetime import timedelta, timezone, datetime as _dt
+            # optional ?date=YYYY-MM-DD, default today (server local time)
+            date_Part = None
+            try:
+                import urllib.parse as _up
+                qs = _up.parse_qs(_up.urlparse(self.path).query)
+                if "date" in qs:
+                    date_Part = _dt.strptime(qs["date"][0], "%Y-%m-%d").date()
+            except ValueError:
+                self._json({"error": "bad date"}, 400)
+                return
+            now_local = _local_now(self.server.autom.location)
+            day = date_Part or now_local.date()
+            import sun as sun_mod
+            rise, set_ = sun_mod.sun_times_utc(day.year, day.month, day.day,
+                                               float(self.server.autom.location.get("lat") or 0),
+                                               float(self.server.autom.location.get("lon") or 0))
+            if not self.server.autom.location.get("lat"):
+                self._json({"error": "location not set", "hint": "POST /api/location"}, 400)
+                return
+            tzname = self.server.autom.location.get("tz")
+            from zoneinfo import ZoneInfo as _Z
+            tzf = _Z(tzname) if tzname else None
+            day_utc = _dt(day.year, day.month, day.day, tzinfo=timezone.utc)
+
+            def fmt(h):
+                if h is None:
+                    return None
+                t = day_utc + timedelta(hours=h)
+                if tzf:
+                    t = t.astimezone(tzf)
+                return t.strftime("%H:%M")
+            self._json({
+                "date": day.isoformat(),
+                "sunrise": fmt(rise),
+                "sunset": fmt(set_),
+                "tz": tzname or now_local.tzname(),
+                "location": self.server.autom.location,
+            })
             return
 
         if path == "/api/events":
@@ -1217,6 +1268,34 @@ def main():
     runner = AutomationRunner(autom, api)
     runner.start()
     httpd.runner = runner
+
+    def auto_geolocate():
+        """Sunrise/sunset needs the bulbs' location; derive it from the server's
+        own public IP (city-level) — no permissions, no prompts, nothing sent
+        from the phone. Retries quietly until it succeeds or a location exists."""
+        while autom.location.get("lat") is None:
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("https://ipwho.is/", timeout=10) as resp:
+                    geo = json.loads(resp.read().decode("utf-8"))
+                if geo.get("success") and geo.get("latitude") is not None:
+                    autom.location = {
+                        "lat": round(float(geo["latitude"]), 3),
+                        "lon": round(float(geo["longitude"]), 3),
+                        "tz": (geo.get("timezone") or {}).get("id"),
+                        "city": geo.get("city"),
+                        "source": "ip-geolocated",
+                    }
+                    autom.save()
+                    log(f"location auto-detected: {autom.location.get('city')} "
+                        f"({autom.location['lat']}, {autom.location['lon']})")
+                    break
+            except Exception as e:
+                if args.verbose:
+                    log(f"ip geolocation unavailable ({e}) — will retry")
+            time.sleep(60)
+
+    threading.Thread(target=auto_geolocate, daemon=True, name="auto-geo").start()
 
     print("Sengled local server running")
     print(f"  LAN IP (advertised to bulbs): {lan_ip}")

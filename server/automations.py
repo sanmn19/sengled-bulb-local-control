@@ -109,7 +109,14 @@ class AutomationsStore:
         if not isinstance(actions, list) or not actions:
             raise BadAutomation("actions must be a non-empty list")
         out = []
+        seen_actions = set()
         for a in actions:
+            if a.get("action") in seen_actions:
+                raise BadAutomation(f"conflicting duplicate action'{ a.get('action') }'")
+            if (a.get("action") == "color" and "colortemp" in seen_actions) or \
+                    (a.get("action") == "colortemp" and "color" in seen_actions):
+                raise BadAutomation("color and white temperature conflict in one automation")
+            seen_actions.add(a.get("action"))
             macs = a.get("macs")
             if not isinstance(macs, list) or not macs:
                 raise BadAutomation("each action needs macs: [..]")
@@ -121,12 +128,23 @@ class AutomationsStore:
             if mode == "offset" and a.get("action") not in self.OFFSET_ACTIONS:
                 raise BadAutomation(f"offset mode not available for {a.get('action')}")
             value = a.get("value")
-            if a["action"] in ("brightness", "colortemp") and not isinstance(value, (int, float)):
-                raise BadAutomation("numeric value required")
+            if a["action"] in ("brightness", "colortemp"):
+                if not isinstance(value, (int, float)):
+                    raise BadAutomation("numeric value required")
+                if mode == "offset":
+                    if not (-100 <= int(value) <= 100):
+                        raise BadAutomation(f"{a['action']} offset must be -100..100")
+                elif not (0 <= int(value) <= 100):
+                    raise BadAutomation(f"{a['action']} set must be 0..100")
             if mode == "offset":
                 value = int(value) if isinstance(value, (int, float)) else value
-                if a["action"] == "color" and not (isinstance(value, dict) and set(value.keys()) <= {"dr", "dg", "db"}):
-                    raise BadAutomation("color offset needs {dr,dg,db}")
+                if a["action"] == "color":
+                    if not (isinstance(value, dict) and set(value.keys()) <= {"dr", "dg", "db"}):
+                        raise BadAutomation("color offset needs {dr,dg,db}")
+                    for k in ("dr", "dg", "db"):
+                        v = int(value.get(k, 0))
+                        if v < -255 or v > 255:
+                            raise BadAutomation("color delta channels must be within -255..255")
             elif a["action"] == "color" and not (isinstance(value, dict) and all(k in value for k in ("r", "g", "b"))):
                 raise BadAutomation("color set needs {r,g,b}")
             out.append({"macs": [str(m) for m in macs], "action": a["action"],
@@ -134,9 +152,14 @@ class AutomationsStore:
         return out
 
     def create(self, label, trigger, actions):
+        with self.lock:
+            existing = len(self.items)
+        nice_label = str(label or "").strip()[:60]
+        if not nice_label:
+            nice_label = f"Automation {existing + 1}"
         entry = {
             "id": uuid.uuid4().hex[:8],
-            "label": str(label or "")[:60] or "Automation",
+            "label": nice_label,
             "enabled": True,
             "trigger": self._validate_trigger(trigger),
             "actions": self._validate_actions(actions),
@@ -165,6 +188,86 @@ class AutomationsStore:
                     return {"id": automation_id, "enabled": bool(on)}
         raise BadAutomation("no such automation")
 
+    def _sun_event_local(self, kind, day):
+        """Local naive datetime for the sun event on LOCAL day `day`.
+
+        The UTC-hour value from the almanac is anchored ambiguously: an
+        evening event for a western longitude lands in the NEXT UTC day,
+        an eastern one stays on the same UTC day. Try both candidates and
+        accept the one whose local calendar date matches `day`."""
+        hours_utc = self._sun_hours(kind, day)
+        if hours_utc is None:
+            return None
+        tzname = (self.location or {}).get("tz")
+        tz = None
+        if ZoneInfo is not None and tzname:
+            try:
+                tz = ZoneInfo(tzname)
+            except Exception:
+                tz = None
+        day_utc0 = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+        fallback = None
+        for add in (0, 24):
+            t = day_utc0 + timedelta(hours=hours_utc + add)
+            t_local = t.astimezone(tz) if tz else t
+            naive = t_local.replace(tzinfo=None)
+            if naive.date() == day:
+                return naive
+            if fallback is None:
+                fallback = naive
+        return fallback
+
+    def next_run_minutes(self, entry, now_local):
+        """Minutes until the next trigger (sun events compute per-date)."""
+        trig = entry.get("trigger") or {}
+        kind = trig.get("type")
+        if kind == "daily":
+            hh, mm = [int(x) for x in trig.get("time", "00:00").split(":")]
+            target = now_local.replace(hour=hh, minute=mm, second=0, microsecond=0)
+            if target <= now_local:
+                target += timedelta(days=1)
+            return int((target - now_local).total_seconds() // 60)
+        if kind in ("sunrise", "sunset"):
+            for shift in (0, 1):
+                day = (now_local + timedelta(days=shift)).date()
+                ev = self._sun_event_local(kind, day)
+                if ev is None:
+                    return None
+                target = ev + timedelta(minutes=int(trig.get("offsetMinutes", 0)))
+                if target > now_local:
+                    return int((target - now_local).total_seconds() // 60)
+            return None
+        if kind == "interval":
+            state = entry.get("state") or {}
+            last = state.get("last_fired", 0)
+            if not last:
+                return 0  # fires on the next ticker pass
+            period = int(trig.get("minutes", 60)) * 60
+            remaining = float(last) + period - time.time()
+            return max(0, int(remaining // 60))
+        return None
+
+    def _sun_hours(self, kind, day):
+        loc = self.location or {}
+        lat = loc.get("lat")
+        lon = loc.get("lon")
+        if lat is None or lon is None:
+            return None
+        rise, set_ = sun_times_utc(day.year, day.month, day.day, float(lat), float(lon))
+        return rise if kind == "sunrise" else set_
+
+    def _utc_hours_to_local(self, hours_utc, day):
+        tzname = (self.location or {}).get("tz")
+        tz = None
+        if ZoneInfo is not None and tzname:
+            try:
+                tz = ZoneInfo(tzname)
+            except Exception:
+                tz = None
+        day_utc = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+        t = day_utc + timedelta(hours=hours_utc)
+        return t.astimezone(tz).replace(tzinfo=None) if tz else t.replace(tzinfo=None)
+
     def set_location(self, lat, lon, tz=None):
         self.location = {"lat": float(lat), "lon": float(lon)}
         if tz:
@@ -181,7 +284,7 @@ def _local_now(location):
             tz = ZoneInfo(tzname)
         except Exception:
             tz = None
-    return datetime.now(tz) if tz else datetime.now()
+    return datetime.now(tz).replace(tzinfo=None) if tz else datetime.now()
 
 
 def resolve_offset(control, mac, action, mode, value):
@@ -265,22 +368,10 @@ class AutomationRunner(threading.Thread):
                 hh, mm = trig["time"].split(":")
                 target = local_now.replace(hour=int(hh), minute=int(mm), second=0, microsecond=0)
             else:
-                hours_utc = self._sun_event_hours_utc(kind, today)
-                if hours_utc is None:
+                event_local = self._sun_event_local(kind, today)
+                if event_local is None:
                     return False  # no location or polar day
-                tzname = (self.store.location or {}).get("tz")
-                tz = None
-                if ZoneInfo is not None and tzname:
-                    try:
-                        tz = ZoneInfo(tzname)
-                    except Exception:
-                        tz = None
-                base_day = local_now.date()
-                day_utc = datetime(base_day.year, base_day.month, base_day.day, tzinfo=timezone.utc)
-                event_utc = day_utc + timedelta(hours=hours_utc)
-                target = event_utc + timedelta(minutes=int(trig.get("offsetMinutes", 0)))
-                if tz:
-                    target = target.astimezone(tz)
+                target = event_local + timedelta(minutes=int(trig.get("offsetMinutes", 0)))
                 target = target.replace(second=0, microsecond=0)
             return local_now >= target
         if kind == "interval":
