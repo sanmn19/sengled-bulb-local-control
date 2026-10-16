@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/sengled_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="bottom"
+        android:padding="16dp"
+        android:paddingBottom="50px">
+
+        <EditText
+            android:id="@+id/edLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Automation name (optional)"
+            android:textColor="@color/sengled_text"
+            android:textColorHint="@color/sengled_text_dim"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="When?"
+            android:textColor="@color/sengled_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spTrigger"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" />
+
+        <EditText
+            android:id="@+id/edTriggerParam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:hint="clock time: 22:00"
+            android:textColor="@color/sengled_text"
+            android:textColorHint="@color/sengled_text_dim"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tvSunInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="13sp"
+            android:textStyle="italic"
+            android:textColor="@color/sengled_text_dim" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="34dp"
+            android:text="Actions"
+            android:textColor="@color/sengled_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/actionList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Spinner
+            android:id="@+id/spAction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" />
+
+        <View
+            android:id="@+id/colorSwatch"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone" />
+
+        <CheckBox
+            android:id="@+id/cbDelta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Delta (adjust current value)" />
+
+        <SeekBar
+            android:id="@+id/sbDelta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            android:max="200"
+            android:progress="100" />
+
+        <EditText
+            android:id="@+id/edValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            android:hint="RGB: 255:100:0"
+            android:textColor="@color/sengled_text"
+            android:textColorHint="@color/sengled_text_dim"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tvSliderLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            android:textColor="@color/sengled_text"
+            android:textSize="14sp" />
+
+        <SeekBar
+            android:id="@+id/sbActValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:visibility="gone"
+            android:max="100" />
+
+        <Switch
+            android:id="@+id/swActPower"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            android:textColor="@color/sengled_text"
+            android:text="" />
+
+        <Button
+            android:id="@+id/btnAddAction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/btn_add_red"
+            android:textColor="#FFFFFF"
+            android:padding="8dp"
+            android:text="+ Add this action" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="34dp"
+            android:text="Which bulbs?"
+            android:textColor="@color/sengled_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/targetList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/btnSaveAuto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:background="@drawable/btn_add_red"
+            android:textColor="#FFFFFF"
+            android:text="Create automation" />
+    </LinearLayout>
+</ScrollView>

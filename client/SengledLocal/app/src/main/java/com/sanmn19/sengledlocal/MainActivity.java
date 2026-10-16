@@ -33,6 +33,8 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnRefresh).setOnClickListener(v -> deepRefresh());
         findViewById(R.id.btnSettings).setOnClickListener(v ->
                 startActivity(new Intent(this, SettingsActivity.class)));
+        findViewById(R.id.btnAutomations).setOnClickListener(v ->
+                startActivity(new Intent(this, AutomationsActivity.class)));
         findViewById(R.id.btnPair).setOnClickListener(v -> showAddChoices());
         feed = new EventFeed(() -> runOnUiThread(MainActivity.this::reload));
         feed.startFeed();
@@ -302,7 +304,7 @@ public class MainActivity extends Activity {
     }
 
     private void showAddChoices() {
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog)
                 .setTitle("Add")
                 .setItems(new String[]{"Add room", "Pair new bulb"}, (d, which) -> {
                     if (which == 0) addRoomDialog();
@@ -314,7 +316,7 @@ public class MainActivity extends Activity {
     private void addRoomDialog() {
         EditText ed = new EditText(this);
         ed.setHint("Room name");
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog)
                 .setTitle("Add room")
                 .setView(ed)
                 .setPositiveButton(R.string.save, (d, w) -> {
@@ -335,7 +337,7 @@ public class MainActivity extends Activity {
 
     private void showBulbMenu(String mac, String display) {
         String[] options = {getString(R.string.rename), getString(R.string.move_to_room)};
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog)
                 .setTitle(display)
                 .setItems(options, (d, which) -> {
                     if (which == 0) renameBulb(mac, display);
@@ -347,7 +349,7 @@ public class MainActivity extends Activity {
     private void renameBulb(String mac, String current) {
         EditText ed = new EditText(this);
         ed.setText(current);
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog)
                 .setTitle(R.string.rename)
                 .setView(ed)
                 .setPositiveButton(R.string.save, (d, w) -> State.get().io.execute(() -> {
@@ -373,7 +375,7 @@ public class MainActivity extends Activity {
                 if (arr != null) for (int i = 0; i < arr.length(); i++) {
                     names.add(arr.getJSONObject(i).optString("name"));
                 }
-                runOnUiThread(() -> new AlertDialog.Builder(this)
+                runOnUiThread(() -> new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog)
                         .setTitle(R.string.move_to_room)
                         .setItems(names.toArray(new String[0]), (d, which) -> State.get().io.execute(() -> {
                             try {

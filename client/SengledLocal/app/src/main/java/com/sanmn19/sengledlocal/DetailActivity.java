@@ -180,7 +180,7 @@ public class DetailActivity extends Activity {
             }
         });
 
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog)
                 .setTitle("Pick color")
                 .setView(holder)
                 .setPositiveButton("Done", (d, w) -> bus.flush(mac))

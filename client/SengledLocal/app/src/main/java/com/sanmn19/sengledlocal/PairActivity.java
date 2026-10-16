@@ -288,8 +288,7 @@ public class PairActivity extends Activity {
             status("[4/5] sending encrypted config...");
             // The bulb must reach the server over the home LAN — use the fixed
             // LAN address, never the app's current (e.g. Tailscale) host.
-            String pairHost = State.get().activeHost().isEmpty() ?
-                    "192.168.1.50" : State.get().activeHost();  // users set their rig IP in Settings
+            String pairHost = State.get().activeHost().isEmpty() ? "192.168.1.50" : State.get().activeHost();
             JSONObject params = new JSONObject()
                     .put("name", "setParamsRequest")
                     .put("totalStep", 1).put("curStep", 1)

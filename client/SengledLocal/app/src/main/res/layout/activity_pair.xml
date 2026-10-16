@@ -34,7 +34,8 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:layout_marginTop="18dp">
 
         <ProgressBar
             android:id="@+id/progress"
@@ -57,9 +58,9 @@
 
     <Button
         android:id="@+id/btnManual"
+        android:layout_marginTop="14dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:text="Manual mode: connect to the bulb Wi-Fi yourself" />
 
     <EditText

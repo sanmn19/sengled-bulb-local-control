@@ -26,8 +26,10 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote
 
+from automations import AutomationsStore, AutomationRunner, BadAutomation, resolve_offset
+
 STATE_VERSION = 1
-SERVER_VERSION = "sengled-local 1.8.0 (authoritative power state)"
+SERVER_VERSION = "sengled-local 1.11.0 (auto-named automations)"
 DEFAULT_HTTP_PORT = 57542
 DEFAULT_MQTT_PORT = 8883
 BULB_UDP_PORT = 9080
@@ -476,6 +478,8 @@ class ControlAPI:
         self.confirm_token = {}
         self.token_lock = threading.Lock()
         self.power_intended = {}
+        self.last_colortemp = {}
+        self.last_color = {}
         self.recent_exec = {} 
         self.query_mac = None
         self.query_event = threading.Event()
@@ -617,8 +621,13 @@ class ControlAPI:
                 self.last_brightness[mac] = int(value)
             elif action == "color":
                 r, g, b = value
+                self.last_color[mac] = [int(r), int(g), int(b)]
                 self.mqtt_command(mac, "color", f"{int(r)}:{int(g)}:{int(b)}", item["gradient"])
             elif action == "colortemp":
+                try:
+                    self.last_colortemp[mac] = int(value)
+                except (TypeError, ValueError):
+                    pass
                 br = self.last_brightness.get(mac)
                 if br is None:
                     br_attr = (entry.get("attributes") or {}).get("brightness")
@@ -857,6 +866,61 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"ok": True, "lan_ip": cfg["lan_ip"]})
             return
 
+        if path == "/api/automations":
+            payload = self.server.autom.snapshot()
+            from automations import _local_now
+            now_local = _local_now(self.server.autom.location)
+            for e in payload["automations"]:
+                try:
+                    e["next_run_minutes"] = self.server.autom.next_run_minutes(e, now_local)
+                except Exception:
+                    e["next_run_minutes"] = None
+            self._json(payload)
+            return
+
+        if path.startswith("/api/sun"):
+            from automations import _local_now
+            from datetime import timedelta, timezone, datetime as _dt
+            # optional ?date=YYYY-MM-DD, default today (server local time)
+            date_Part = None
+            try:
+                import urllib.parse as _up
+                qs = _up.parse_qs(_up.urlparse(self.path).query)
+                if "date" in qs:
+                    date_Part = _dt.strptime(qs["date"][0], "%Y-%m-%d").date()
+            except ValueError:
+                self._json({"error": "bad date"}, 400)
+                return
+            now_local = _local_now(self.server.autom.location)
+            day = date_Part or now_local.date()
+            import sun as sun_mod
+            rise, set_ = sun_mod.sun_times_utc(day.year, day.month, day.day,
+                                               float(self.server.autom.location.get("lat") or 0),
+                                               float(self.server.autom.location.get("lon") or 0))
+            if not self.server.autom.location.get("lat"):
+                self._json({"error": "location not set", "hint": "POST /api/location"}, 400)
+                return
+            tzname = self.server.autom.location.get("tz")
+            from zoneinfo import ZoneInfo as _Z
+            tzf = _Z(tzname) if tzname else None
+            day_utc = _dt(day.year, day.month, day.day, tzinfo=timezone.utc)
+
+            def fmt(h):
+                if h is None:
+                    return None
+                t = day_utc + timedelta(hours=h)
+                if tzf:
+                    t = t.astimezone(tzf)
+                return t.strftime("%H:%M")
+            self._json({
+                "date": day.isoformat(),
+                "sunrise": fmt(rise),
+                "sunset": fmt(set_),
+                "tz": tzname or now_local.tzname(),
+                "location": self.server.autom.location,
+            })
+            return
+
         if path == "/api/events":
             import urllib.parse as _up
             try:
@@ -911,6 +975,62 @@ class Handler(BaseHTTPRequestHandler):
         store = self.server.store
         rooms = self.server.rooms
         body = self._read_body()
+
+        if path == "/api/automations":
+            try:
+                req = json.loads(body.decode("utf-8"))
+            except ValueError:
+                self._json({"error": "invalid json"}, 400)
+                return
+            try:
+                entry = self.server.autom.create(req.get("label"), req.get("trigger"),
+                                                 req.get("actions"))
+            except BadAutomation as e:
+                self._json({"error": str(e)}, 400)
+                return
+            self._json({"created": entry})
+            return
+
+        if path == "/api/location":
+            try:
+                req = json.loads(body.decode("utf-8"))
+            except ValueError:
+                self._json({"error": "invalid json"}, 400)
+                return
+            if "lat" not in req or "lon" not in req:
+                self._json({"error": "lat+lon required"}, 400)
+                return
+            self._json({"location": self.server.autom.set_location(
+                req["lat"], req["lon"], req.get("tz"))})
+            return
+
+        seg = [p_ for p_ in path.split("/") if p_]
+        if len(seg) == 4 and seg[0] == "api" and seg[1] == "automations" and seg[3] in ("enabled", "run"):
+            aid = seg[2]
+            if seg[3] == "enabled":
+                try:
+                    req = json.loads(body.decode("utf-8"))
+                except ValueError:
+                    req = {}
+                try:
+                    self._json({"updated": self.server.autom.set_enabled(aid,
+                                bool(req.get("on", True)))})
+                except BadAutomation as e:
+                    self._json({"error": str(e)}, 404)
+                return
+            # seg[3] == "run" — manual trigger for testing
+            for e in self.server.autom.snapshot()["automations"]:
+                if e["id"] != aid:
+                    continue
+                runner_fire = getattr(self.server, "runner", None)
+                if runner_fire:
+                    runner_fire.fire(e)
+                    self._json({"ran": aid})
+                else:
+                    self._json({"error": "runner missing"}, 500)
+                return
+            self._json({"error": "no such automation"}, 404)
+            return
 
         if path == "/api/refresh":
             result = {}
@@ -1084,6 +1204,13 @@ class Handler(BaseHTTPRequestHandler):
         if len(seg) == 3 and seg[0] == "api" and seg[1] == "rooms":
             self._json(rooms.delete(unquote(seg[2])))
             return
+        if len(seg) == 3 and seg[0] == "api" and seg[1] == "automations":
+            try:
+                self.server.autom.delete(seg[2])
+                self._json({"deleted": seg[2]})
+            except BadAutomation:
+                self._json({"error": "no such automation"}, 404)
+            return
         self._json({"error": "not found"}, 404)
 
 
@@ -1107,8 +1234,11 @@ def main():
     cfg = {"lan_ip": lan_ip, "mqtt_port": args.mqtt_port}
 
     store = BulbStore(args.state_file)
-    rooms_path = os.path.join(os.path.dirname(os.path.abspath(args.state_file)), "rooms.json")
+    data_dir = os.path.dirname(os.path.abspath(args.state_file))
+    rooms_path = os.path.join(data_dir, "rooms.json")
     rooms = RoomsStore(rooms_path, store)
+    autom = AutomationsStore(os.path.join(data_dir, "automations.json"),
+                             os.path.join(data_dir, "location.json"))
     core = BrokerCore()
     api = ControlAPI(core, store, verbose=args.verbose)
     hub = EventHub()
@@ -1129,10 +1259,43 @@ def main():
     httpd.store = store
     httpd.rooms = rooms
     httpd.hub = hub
+    httpd.autom = autom
     httpd.cfg = cfg
     httpd.started_at = time.time()
 
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
+
+    runner = AutomationRunner(autom, api)
+    runner.start()
+    httpd.runner = runner
+
+    def auto_geolocate():
+        """Sunrise/sunset needs the bulbs' location; derive it from the server's
+        own public IP (city-level) — no permissions, no prompts, nothing sent
+        from the phone. Retries quietly until it succeeds or a location exists."""
+        while autom.location.get("lat") is None:
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("https://ipwho.is/", timeout=10) as resp:
+                    geo = json.loads(resp.read().decode("utf-8"))
+                if geo.get("success") and geo.get("latitude") is not None:
+                    autom.location = {
+                        "lat": round(float(geo["latitude"]), 3),
+                        "lon": round(float(geo["longitude"]), 3),
+                        "tz": (geo.get("timezone") or {}).get("id"),
+                        "city": geo.get("city"),
+                        "source": "ip-geolocated",
+                    }
+                    autom.save()
+                    log(f"location auto-detected: {autom.location.get('city')} "
+                        f"({autom.location['lat']}, {autom.location['lon']})")
+                    break
+            except Exception as e:
+                if args.verbose:
+                    log(f"ip geolocation unavailable ({e}) — will retry")
+            time.sleep(60)
+
+    threading.Thread(target=auto_geolocate, daemon=True, name="auto-geo").start()
 
     print("Sengled local server running")
     print(f"  LAN IP (advertised to bulbs): {lan_ip}")

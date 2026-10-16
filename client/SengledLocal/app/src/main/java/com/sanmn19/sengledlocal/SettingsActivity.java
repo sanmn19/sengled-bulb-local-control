@@ -102,7 +102,7 @@ public class SettingsActivity extends Activity {
 
         Button del = new Button(this);
         del.setText("✕");
-        del.setOnClickListener(v -> new AlertDialog.Builder(this)
+        del.setOnClickListener(v -> new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog)
                 .setTitle("Delete room '" + name + "'?")
                 .setPositiveButton("Delete", (d, w) -> State.get().io.execute(() -> {
                     try {
